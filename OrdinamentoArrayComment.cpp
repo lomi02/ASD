@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 vector<int> InputArray() {
@@ -116,6 +117,37 @@ void radixSort(vector<int>& arr) {
         // Si possono utilizzare tutti gli algoritmi di ordinamento affinché viene
         // passato in input anche l'unità del valore.
         //countingSortComment(arr, exp);
+    }
+}
+
+// [Ordinamento di Tempo Lineare] Algoritmo del Bucket Sort
+// Complessità: Dipende dall'algoritmo di ordinamento scelto
+void bucketSort(vector<float>& arr) {
+    int n = arr.size();
+
+    // Creiamo n bucket vuoti
+    vector<vector<float>> buckets(n);
+
+    // Inseriamo ogni elemento nel bucket appropriato
+    for (int i = 0; i < n; i++) {
+        int index = n * arr[i]; // Calcola l'indice del bucket
+        buckets[index].push_back(arr[i]);
+    }
+
+    // Ordiniamo i singoli bucket (possiamo usare sort di STL)
+    for (int i = 0; i < n; i++) {
+
+        // Qui si usa il sorting della libreria algorithm, però
+        // idealmente va utilizzato un algoritmo di sorting di quelli studiati.
+        ranges::sort(buckets[i]);
+    }
+
+    // Uniamo tutti i bucket nell'array originale
+    int index = 0;
+    for (int i = 0; i < n; i++) {
+        for (float num : buckets[i]) {
+            arr[index++] = num;
+        }
     }
 }
 
