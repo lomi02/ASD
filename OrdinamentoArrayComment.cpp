@@ -100,6 +100,8 @@ void countingSortComment(vector<int> &arr) {
     }
 }
 
+// TODO: Counting sort di Cormen
+
 // [Ordinamento di Tempo Lineare] Algoritmo del Radix Sort
 // Complessità: Dipende dall'algoritmo di ordinamento scelto
 void radixSort(vector<int>& arr) {
@@ -150,6 +152,8 @@ void bucketSort(vector<float>& arr) {
         }
     }
 }
+
+// TODO: Bucket sort di Cormen
 
 int main() {
     vector array = InputArray();
