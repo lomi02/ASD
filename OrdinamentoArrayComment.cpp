@@ -99,6 +99,26 @@ void countingSortComment(vector<int> &arr) {
     }
 }
 
+// [Ordinamento di Tempo Lineare] Algoritmo del Radix Sort
+// Complessità: Dipende dall'algoritmo di ordinamento scelto
+void radixSort(vector<int>& arr) {
+    int n = arr.size();
+
+    // Troviamo il numero massimo per sapere il numero di cifre
+    int maxVal = arr[0];
+    for (int i = 1; i < n; i++) {
+        if (arr[i] > maxVal) maxVal = arr[i];
+    }
+
+    // Applichiamo counting sort per ogni cifra (unità, decine, centinaia...)
+    for (int exp = 1; maxVal / exp > 0; exp= 10) {
+
+        // Si possono utilizzare tutti gli algoritmi di ordinamento affinché viene
+        // passato in input anche l'unità del valore.
+        //countingSortComment(arr, exp);
+    }
+}
+
 int main() {
     vector array = InputArray();
 
