@@ -3,4 +3,4 @@ project(CodiciASD)
 
 set(CMAKE_CXX_STANDARD 26)
 
-add_executable(CodiciASD main.cpp)
+add_executable(CodiciASD OrdinamentoArrayComment.cpp)
