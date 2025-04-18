@@ -3,4 +3,4 @@ project(CodiciASD)
 
 set(CMAKE_CXX_STANDARD 26)
 
-add_executable(CodiciASD Divide_Et_ImperaComment.cpp)
+add_executable(CodiciASD HeapComment.cpp)
