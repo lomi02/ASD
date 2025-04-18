@@ -8,7 +8,6 @@ struct Result {
 };
 
 vector<int> InputArray() {
-
     // Inserimento dimensione array
     int size;
     cout << "\nDimensione array: ";
@@ -49,7 +48,6 @@ int binarySearch(vector<int> &A, int low, int high, int x) {
 // [Ordinamento Divide and Conquer] Algoritmo del Find-Max-Crossing-Subarray
 // Trova il massimo sottoarray che attraversa il punto centrale (mid)
 Result findMaxCrossingSubarray(const vector<int> &A, int low, int mid, int high) {
-
     // Esploriamo la parte sinistra, da mid verso low
     int leftSum = INT_MIN;
     int sum = 0;
@@ -81,7 +79,6 @@ Result findMaxCrossingSubarray(const vector<int> &A, int low, int mid, int high)
 // [Ordinamento Divide and Conquer] Algoritmo del Find-Maximum-Subarray
 // Algoritmo principale Divide et Impera per trovare il massimo sottoarray
 Result findMaximumSubarray(const vector<int> &A, int low, int high) {
-
     // Caso base: il sottoarray ha un solo elemento
     if (low == high)
         return {low, high, A[low]};
@@ -107,6 +104,51 @@ Result findMaximumSubarray(const vector<int> &A, int low, int high) {
         return cross;
 }
 
+// Funzione di supporto MergeSort
+void merge(vector<int> &arr, int left, int mid, int right) {
+
+    // Creo i due sottoarray temporanei, sinistra e destra
+    vector leftArr(arr.begin() + left, arr.begin() + mid + 1);
+    vector rightArr(arr.begin() + mid + 1, arr.begin() + right + 1);
+
+    // Indici per navigare nei due sottoarray
+    int i = 0, j = 0, k = left;
+
+    // Confronto gli elementi e copio il più piccolo nell'array principale
+    while (i < leftArr.size() && j < rightArr.size()) {
+        if (leftArr[i] <= rightArr[j])
+            arr[k++] = leftArr[i++];
+        else
+            arr[k++] = rightArr[j++];
+    }
+
+    // Copia eventuali rimanenti della parte sinistra
+    while (i < leftArr.size())
+        arr[k++] = leftArr[i++];
+
+    // Copia eventuali rimanenti della parte destra
+    while (j < rightArr.size())
+        arr[k++] = rightArr[j++];
+}
+
+// [Ordinamento Divide and Conquer] Algoritmo della Ricerca Binaria
+// Complessità: θ(n log n)
+void mergeSort(vector<int> &arr, int left, int right) {
+
+    // Caso base: se la parte ha un solo elemento, è già ordinata
+    if (left >= right) return;
+
+    // DIVIDE: Calcolo punto centrale
+    int mid = (left + right) / 2;
+
+    // IMPERA: Ordina ricorsivamente la parte sinistra e destra
+    mergeSort(arr, left, mid);
+    mergeSort(arr, mid + 1, right);
+
+    // MERGE: Combina le due parti ordinate
+    merge(arr, left, mid, right);
+}
+
 int main() {
     vector A = InputArray();
     cout << "\nArray in input: " << endl;
@@ -117,8 +159,8 @@ int main() {
 
     // Stampiamo il risultato
     cout << "Massimo sottoarray trovato da indice " << result.left
-         << " a indice " << result.right
-         << " con somma massima: " << result.sum << endl;
+            << " a indice " << result.right
+            << " con somma massima: " << result.sum << endl;
 
     return 0;
 }
