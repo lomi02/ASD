@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <climits>
 #include <vector>
 using namespace std;
@@ -48,7 +49,7 @@ Result findMaxCrossingSubarray(const vector<int> &A, int low, int mid, int high)
     return {maxLeft, maxRight, leftSum + rightSum};
 }
 
-Result findMaximumSubarray(const vector<int>& A, int low, int high) {
+Result findMaximumSubarray(const vector<int> &A, int low, int high) {
     if (low == high) {
         return {low, high, A[low]};
     }
@@ -64,4 +65,92 @@ Result findMaximumSubarray(const vector<int>& A, int low, int high) {
         return right;
     else
         return cross;
+}
+
+void merge(vector<int> &arr, int left, int mid, int right) {
+    vector leftArr(arr.begin() + left, arr.begin() + mid + 1);
+    vector rightArr(arr.begin() + mid + 1, arr.begin() + right + 1);
+
+    int i = 0, j = 0, k = left;
+
+    while (i < leftArr.size() && j < rightArr.size()) {
+        if (leftArr[i] <= rightArr[j])
+            arr[k++] = leftArr[i++];
+        else
+            arr[k++] = rightArr[j++];
+    }
+
+    while (i < leftArr.size())
+        arr[k++] = leftArr[i++];
+
+    while (j < rightArr.size())
+        arr[k++] = rightArr[j++];
+}
+
+void mergeSort(vector<int> &arr, int left, int right) {
+    if (left >= right) return;
+
+    int mid = (left + right) / 2;
+
+    mergeSort(arr, left, mid);
+    mergeSort(arr, mid + 1, right);
+
+    merge(arr, left, mid, right);
+}
+
+int partition(vector<int> &arr, int low, int high) {
+    int pivot = arr[high];
+    int i = low - 1;
+
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+            swap(arr[++i], arr[j]);
+        }
+    }
+
+    swap(arr[i + 1], arr[high]);
+
+    return i + 1;
+}
+
+void quickSort(vector<int> &arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
+int randomizedPartition(vector<int> &arr, int low, int high) {
+    int randomPivot = low + rand() % (high - low + 1);
+    swap(arr[randomPivot], arr[high]);
+    return partition(arr, low, high);
+}
+
+void randomizedQuickSort(vector<int> &arr, int low, int high) {
+    if (low < high) {
+        int pi = randomizedPartition(arr, low, high);
+        randomizedQuickSort(arr, low, pi - 1);
+        randomizedQuickSort(arr, pi + 1, high);
+    }
+}
+
+void hybridSort(vector<int> &arr, int low, int high) {
+    int THRESHOLD = 10;
+    while (low < high) {
+        if (high - low + 1 <= THRESHOLD) {
+            // insertionSort(arr, low, high);
+            break;
+        } else {
+            int pi = partition(arr, low, high);
+
+            if (pi - low < high - pi) {
+                hybridSort(arr, low, pi - 1);
+                low = pi + 1;
+            } else {
+                hybridSort(arr, pi + 1, high);
+                high = pi - 1;
+            }
+        }
+    }
 }

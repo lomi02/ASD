@@ -204,6 +204,34 @@ void randomizedQuickSort(vector<int>& arr, int low, int high) {
     }
 }
 
+// [Ordinamento Divide and Conquer] Algoritmo dell'HybridSort
+void hybridSort(vector<int>& arr, int low, int high) {
+    int THRESHOLD = 10; // Parametro di scelta
+    while (low < high) {
+
+        // Se la dimensione è piccola, uso InsertionSort
+        if (high - low + 1 <= THRESHOLD) {
+
+            // Qui va utilizzato l'InsertionSort, ma non riscrivo la funzione.
+            // insertionSort(arr, low, high);
+            break;
+        } else {
+
+            // Altrimenti procedo con QuickSort
+            int pi = partition(arr, low, high);
+
+            // Ottimizzazione tail-recursion (richiamo la parte più piccola per prima)
+            if (pi - low < high - pi) {
+                hybridSort(arr, low, pi - 1);
+                low = pi + 1; // Ricorsione di destra è trasformata in ciclo
+            } else {
+                hybridSort(arr, pi + 1, high);
+                high = pi - 1;
+            }
+        }
+    }
+}
+
 int main() {
     vector A = InputArray();
     cout << "\nArray in input: " << endl;
