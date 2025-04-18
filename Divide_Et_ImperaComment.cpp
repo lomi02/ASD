@@ -131,7 +131,7 @@ void merge(vector<int> &arr, int left, int mid, int right) {
         arr[k++] = rightArr[j++];
 }
 
-// [Ordinamento Divide and Conquer] Algoritmo della Ricerca Binaria
+// [Ordinamento Divide and Conquer] Algoritmo del MergeSort
 // Complessità: θ(n log n)
 void mergeSort(vector<int> &arr, int left, int right) {
 
@@ -147,6 +147,61 @@ void mergeSort(vector<int> &arr, int left, int right) {
 
     // MERGE: Combina le due parti ordinate
     merge(arr, left, mid, right);
+}
+
+// Funzione di supporto QuickSort
+int partition(vector<int>& arr, int low, int high) {
+    int pivot = arr[high];  // Pivot scelto come ultimo elemento
+    int i = low - 1;        // i tiene traccia della "zona minore del pivot"
+
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+
+            // Se l'elemento è <= pivot, lo spostiamo a sinistra
+            swap(arr[++i], arr[j]);
+        }
+    }
+
+    // Mettiamo il pivot nella sua posizione finale ordinata
+    swap(arr[i + 1], arr[high]);
+
+    // Ritorna la posizione del pivot
+    return i + 1;
+}
+
+// [Ordinamento Divide and Conquer] Algoritmo del QuickSort
+// Caso Favorevole: θ(n log n)
+// Caso Medio: θ(n log n)
+// Caso Sfavorevole: θ(n^2)
+void quickSort(vector<int>& arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high); // Divisione in due parti
+        quickSort(arr, low, pi - 1);        // Ricorsione sulla parte sinistra
+        quickSort(arr, pi + 1, high);       // Ricorsione sulla parte destra
+    }
+}
+
+// Funzione di supporto Randomized QuickSort
+int randomizedPartition(vector<int>& arr, int low, int high) {
+
+    // Scelgo un pivot casuale tra low e high
+    int randomPivot = low + rand() % (high - low + 1);
+    swap(arr[randomPivot], arr[high]); // Metto il pivot alla fine
+    return partition(arr, low, high);  // Procedo come al solito
+}
+
+// [Ordinamento Divide and Conquer] Algoritmo del Randomized QuickSort
+// Caso Favorevole: θ(n log n)
+// Caso Medio: θ(n log n)
+// Caso Sfavorevole: θ(n^2)
+void randomizedQuickSort(vector<int>& arr, int low, int high) {
+    if (low < high) {
+
+        // Partizione casuale riduce il rischio del caso peggiore
+        int pi = randomizedPartition(arr, low, high);
+        randomizedQuickSort(arr, low, pi - 1);
+        randomizedQuickSort(arr, pi + 1, high);
+    }
 }
 
 int main() {
