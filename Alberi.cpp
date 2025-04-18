@@ -1,7 +1,6 @@
 #include <iostream>
 using namespace std;
 
-// Struttura base di un nodo dell'albero binario di ricerca
 struct Node {
     int key;
     Node *parent;

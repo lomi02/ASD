@@ -3,4 +3,4 @@ project(CodiciASD)
 
 set(CMAKE_CXX_STANDARD 26)
 
-add_executable(CodiciASD AlberiComment.cpp)
+add_executable(CodiciASD ProgrammazioneDinamicaComment.cpp)
