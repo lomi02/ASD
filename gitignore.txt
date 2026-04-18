@@ -1,8 +1,5 @@
-cmake-build-debug/
+cmake-build-*/
 .idea/
 CMakeCache.txt
 CMakeFiles/
-*.o
-*.exe
-*.out
 Blackboard.cpp
