@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/mnt/c/Users/1lomi/OneDrive/Studio/ASD/CodiciC++/cmake-build-debug",
+  "command": "/usr/bin/c++   -g -std=gnu++11 -fdiagnostics-color=always -o CMakeFiles/EsameC++.dir/Blackboard.cpp.o -c /mnt/c/Users/1lomi/OneDrive/Studio/ASD/CodiciC++/Blackboard.cpp",
+  "file": "/mnt/c/Users/1lomi/OneDrive/Studio/ASD/CodiciC++/Blackboard.cpp",
+  "output": "CMakeFiles/EsameC++.dir/Blackboard.cpp.o"
+}
+]

@@ -69,6 +69,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "RunOnceActivity.west.config.association.type.startup.service": "true",
@@ -93,11 +94,6 @@
   </component>
   <component name="RunManager">
     <configuration name="EsameC++" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="EsameC++" TARGET_NAME="EsameC++" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="EsameC++" RUN_TARGET_NAME="EsameC++">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -262,6 +258,7 @@
       <workItem from="1776529792855" duration="1473000" />
       <workItem from="1776531283700" duration="11000" />
       <workItem from="1776531304839" duration="10843000" />
+      <workItem from="1776542872927" duration="245000" />
     </task>
     <servers />
   </component>

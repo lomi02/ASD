@@ -1,7 +1,3 @@
 cmake-build-debug/
 .idea/
-CMakeCache.txt
-CMakeFiles/
-*.iml
-*.xml
 Blackboard.cpp
