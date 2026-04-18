@@ -194,7 +194,7 @@ public:
 int main() {
 
     // Apertura del file di input.
-    ifstream input("input.txt");
+    ifstream input("inputG.txt");
     if (!input.is_open()) {
         cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
@@ -226,7 +226,7 @@ int main() {
     input.close();
 
     // Apertura del file di output.
-    ofstream output("output.txt");
+    ofstream output("outputG.txt");
     if (!output.is_open()) return 1;
 
     // Sezione 1: Visualizzazione liste di adiacenza.

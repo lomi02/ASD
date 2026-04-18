@@ -98,7 +98,7 @@ public:
 };
 
 int main() {
-    ifstream input("input.txt");
+    ifstream input("inputG.txt");
     if (!input.is_open()) {
         cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
@@ -125,7 +125,7 @@ int main() {
     }
     input.close();
 
-    ofstream output("output.txt");
+    ofstream output("outputG.txt");
     if (!output.is_open()) {
         cout << "Errore nella creazione del file di output." << endl;
         return 1;

@@ -151,7 +151,7 @@ public:
 };
 
 int main() {
-    ifstream input("input.txt");
+    ifstream input("inputG.txt");
     if (!input.is_open()) {
         cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
@@ -178,7 +178,7 @@ int main() {
     }
     input.close();
 
-    ofstream output("output.txt");
+    ofstream output("outputG.txt");
     if (!output.is_open()) return 1;
 
     output << "Lista di Adiacenza:" << endl;
