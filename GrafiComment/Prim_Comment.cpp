@@ -3,208 +3,158 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <functional>
 #include <queue>
 
 using namespace std;
 
-// Definiamo dei numeri interi per rappresentare lo stato di esplorazione di un nodo
-constexpr int WHITE = 0;       // Il nodo è "nuovo", non è ancora stato toccato
-constexpr int GRAY = 1;        // Il nodo è stato scoperto ma i suoi vicini sono ancora da controllare
-constexpr int BLACK = 2;       // Il nodo e tutti i suoi vicini sono stati esplorati completamente
-constexpr int INFINITY = 9999; // Usato per dire "non so ancora quanto sia lontano questo nodo"
+// Definizione di una costante per rappresentare l'infinito.
+// Viene usata per inizializzare i pesi minimi (chiavi) dei nodi non ancora inclusi nell'MST.
+constexpr int INFINITY = 9999;
 
-// Template <typename T> permette alla classe di gestire sia int, che float, che altri tipi
+// Classe template che rappresenta un singolo Nodo (o Vertice) del grafo.
 template<typename T>
 class Node {
 public:
-    T val;                // Il nome o ID del nodo (es. 1, 2, 3...)
-    T key;                // Variabile di supporto (spesso usata in algoritmi come Prim)
-    int rank{};           // Usato per l'unione di set (algoritmo di Kruskal)
-    int color = WHITE;    // All'inizio, ogni nodo creato è WHITE (non visitato)
-    T dist = INFINITY;    // All'inizio, la distanza dalla sorgente è sconosciuta (infinito)
-    T discovery_time = 0; // Quando il nodo viene trovato (usato in DFS)
-    T finish_time = 0;    // Quando il nodo ha finito di essere esplorato (usato in DFS)
+    T val; // Il valore o identificativo contenuto nel nodo.
 
-    Node *parent;         // Puntatore al nodo che ci ha permesso di scoprire questo nodo
-
-    // Costruttore: inizializza il valore e imposta il genitore a nullo
-    explicit Node(T val) : val(val), parent(nullptr) {}
+    // Costruttore: inizializza il valore del nodo.
+    explicit Node(T val) : val(val) {}
 };
 
-template<typename T>
-class Edge {
-public:
-    T weight;             // Il "costo" o peso per attraversare questo arco
-    Node<T> *source;      // Da dove parte l'arco (puntatore a oggetto Node)
-    Node<T> *destination; // Dove arriva l'arco (puntatore a oggetto Node)
-
-    // Costruttore dell'arco
-    Edge(T weight, Node<T> *source, Node<T> *destination) : weight(weight), source(source), destination(destination) {}
-};
-
+// Classe template che gestisce la struttura del Grafo e l'algoritmo di Prim.
 template<typename T>
 class Graph {
 public:
-    T time = 0;              // Contatore globale per i tempi di scoperta/fine
-    vector<Node<T> *> nodes; // Contenitore che tiene traccia di tutti i nodi nel grafo
-    vector<Edge<T> *> edges; // Contenitore che tiene traccia di tutti gli archi nel grafo
+    vector<Node<T> *> nodes; // Lista di tutti i nodi presenti nel grafo.
 
-    // Mappa dove la chiave è il valore del nodo e il valore è una lista di coppie (vicino, peso)
+    // Lista di adiacenza: mappa il valore di un nodo ai suoi vicini (coppia valore-peso).
     map<T, vector<pair<T, T> > > adjacencyList;
 
-    // Aggiunge un nodo alla lista globale dei nodi
+    // Aggiunge un nodo alla lista dei nodi del grafo.
     void addNode(Node<T> *node) { nodes.push_back(node); }
 
+    // Crea un arco non orientato tra sorgente e destinazione e lo aggiunge alla lista di adiacenza.
     void addEdge(Node<T> *source, Node<T> *destination, T weight) {
-
-        // Crea dinamicamente un nuovo oggetto Edge nella memoria (heap)
-        auto *edge = new Edge<T>(weight, source, destination);
-
-        // Lo salva nel vettore globale degli archi
-        edges.push_back(edge);
-
-        // Aggiunge alla lista di adiacenza del nodo sorgente il nodo destinazione e il suo peso
         adjacencyList[source->val].push_back(make_pair(destination->val, weight));
-
-        // Poiché il grafo è non orientato, fa lo stesso al contrario
         adjacencyList[destination->val].push_back(make_pair(source->val, weight));
     }
 
     /**
-     * PRIM
-     * Costruisce l'Albero di Copertura Minimo (MST).
+     * Prim:
+     * Costruisce l'MST partendo da un nodo arbitrario, aggiungendo iterativamente l'arco
+     * di peso minimo che collega un nodo interno all'MST con uno esterno.
      */
     int Prim(ofstream &output) {
-        int src = 0; // Partiamo convenzionalmente dal primo nodo (indice 0)
+        if (nodes.empty()) return 0;
 
-        // Vettore delle "chiavi": rappresenta il peso minimo per collegare il nodo i all'albero che stiamo costruendo.
-        vector<int> key(nodes.size(), INFINITY);
+        // Passo 1: Inizializzazione delle strutture dati di supporto.
+        int src = 0;                              // Si assume il primo nodo come sorgente.
+        vector<int> key(nodes.size(), INFINITY);  // Peso minimo per collegare il nodo all'MST.
+        vector<bool> inMST(nodes.size(), false);  // Specifica se il nodo è già parte dell'MST.
+        vector<int> parent(nodes.size(), -1);     // Memorizza la struttura dell'albero (padre di ogni nodo).
 
-        // Vettore booleano per sapere quali nodi fanno già parte dell'MST.
-        vector<bool> inMST(nodes.size(), false);
-
-        // Vettore per ricostruire la struttura dell'albero (chi è collegato a chi).
-        vector<int> parent(nodes.size(), -1);
-
-        // Priority Queue (Min-Heap): estrae sempre il nodo con la 'key' più piccola.
-        // Formato: <valore_chiave, indice_nodo>
+        // Passo 2: Utilizzo di una coda di priorità (Min-Priority Queue).
+        // Memorizza coppie (peso, indice_nodo) per estrarre sempre l'arco più leggero.
         priority_queue<pair<int, int>, vector<pair<int, int> >, greater<pair<int, int> > > pq;
 
-        // Inizializzazione: il primo nodo entra nell'albero con costo 0
+        // Inserimento del nodo sorgente nella coda.
         pq.emplace(0, src);
         key[src] = 0;
 
         while (!pq.empty()) {
-
-            // Estraiamo il nodo 'u' che costa meno collegare all'albero corrente
+            // Passo 3: Estrazione del nodo u con la chiave minima.
             int u = pq.top().second;
             pq.pop();
 
-            // Aggiungiamo ufficialmente il nodo all'MST
+            // Se il nodo è già nell'MST, viene saltato (gestione dei duplicati nella pq).
+            if (inMST[u]) continue;
             inMST[u] = true;
 
-            // Esploriamo tutti i vicini di 'u'
-            for (auto v: adjacencyList[nodes[u]->val]) {
-                int vertex = v.first;  // ID del vicino
-                int weight = v.second; // Peso dell'arco (u, v)
+            // Passo 4: Esplorazione dei vicini del nodo u.
+            for (auto &neighbor: adjacencyList[nodes[u]->val]) {
+                int v_val = neighbor.first;
+                int weight = neighbor.second;
 
-                // Qui usiamo solo 'weight', NON 'key[u] + weight'.
-                if (!inMST[vertex] && weight < key[vertex]) {
-                    key[vertex] = weight;            // Aggiorniamo il costo di connessione
-                    pq.emplace(key[vertex], vertex); // Inseriamo in coda
-                    parent[vertex] = u;              // Memorizziamo il collegamento
+                // Ricerca dell'indice del nodo vicino basandosi sul suo valore.
+                int v_index = -1;
+                for (int i = 0; i < nodes.size(); ++i) {
+                    if (nodes[i]->val == v_val) {
+                        v_index = i;
+                        break;
+                    }
+                }
+
+                // Passo 5: Rilassamento. Se il vicino non è nell'MST e il peso dell'arco è minore della chiave attuale, si aggiornano il peso e il padre.
+                if (v_index != -1 && !inMST[v_index] && weight < key[v_index]) {
+                    key[v_index] = weight;
+                    pq.emplace(key[v_index], v_index);
+                    parent[v_index] = u;
                 }
             }
         }
 
-        // Calcolo del costo totale sommando i pesi degli archi scelti
+        // Passo 6: Calcolo del costo totale e stampa degli archi dell'MST su file.
         int costoTotale = 0;
-        for (int i = 1; i < nodes.size(); ++i) {
-            output << parent[i] << " - " << i << " " << key[i] << endl;
-            costoTotale += key[i];
+        for (int i = 0; i < nodes.size(); ++i) {
+            if (parent[i] != -1) {
+                output << nodes[parent[i]]->val << " - " << nodes[i]->val << " " << key[i] << endl;
+                costoTotale += key[i];
+            }
         }
         return costoTotale;
     }
 };
 
 int main() {
-    bool pesiNegativi = false;   // Flag per ricordarci se abbiamo incontrato pesi < 0
-    ifstream input("input.txt"); // Apriamo il file in lettura
 
-    // Controllo sicurezza: il file esiste?
+    // Apertura del file di input contenente i dati del grafo.
+    ifstream input("input.txt");
     if (!input.is_open()) {
-        cerr << "Errore: File input.txt non trovato!" << endl;
+        cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
     }
 
     int numNodes, numEdges;
-    input >> numNodes >> numEdges; // Legge i primi due numeri dal file
+    // Legge il numero totale di nodi e archi.
+    input >> numNodes >> numEdges;
 
-    // Mappa per associare un numero intero (ID) al puntatore dell'oggetto Node reale
+    // Mappa per associare un valore intero al puntatore dell'oggetto Node corrispondente.
     unordered_map<int, Node<int> *> nodesMap;
     Graph<int> g;
 
-    // Ciclo per leggere ogni arco definito nel file
+    // Ciclo per leggere ogni arco dal file e popolare il grafo.
     for (int i = 0; i < numEdges; i++) {
         int sourceVal, destVal, weight;
-        input >> sourceVal >> destVal >> weight; // Legge: Da dove, A dove, Quanto pesa
+        input >> sourceVal >> destVal >> weight;
 
-        // GESTIONE SORGENTE:
-        Node<int> *sourceNode = nullptr;
-        auto itSource = nodesMap.find(sourceVal);
-        if (itSource == nodesMap.end()) {
-
-            // Se non esiste nella mappa, è un nodo nuovo: lo creiamo
-            sourceNode = new Node<int>(sourceVal);
-            nodesMap[sourceVal] = sourceNode; // Lo salviamo nella mappa
-            g.addNode(sourceNode);            // Lo aggiungiamo al grafo
-        } else {
-
-            // Se esisteva già, prendiamo il puntatore esistente
-            sourceNode = itSource->second;
+        for (int val: {sourceVal, destVal}) {
+            if (nodesMap.find(val) == nodesMap.end()) {
+                auto newNode = new Node<int>(val);
+                nodesMap[val] = newNode;
+                g.addNode(newNode);
+            }
         }
 
-        // GESTIONE DESTINAZIONE (Logica identica alla sorgente):
-        Node<int> *destNode = nullptr;
-        auto itDest = nodesMap.find(destVal);
-        if (itDest == nodesMap.end()) {
-            destNode = new Node<int>(destVal);
-            nodesMap[destVal] = destNode;
-            g.addNode(destNode);
-        } else {
-            destNode = itDest->second;
-        }
-
-        // Ora che abbiamo i puntatori ai due nodi, creiamo l'arco tra loro
-        g.addEdge(sourceNode, destNode, weight);
-
-        if (weight < 0) pesiNegativi = true; // Annotiamo se il peso è negativo
+        // Aggiunge l'arco al grafo (trattato come non orientato).
+        g.addEdge(nodesMap[sourceVal], nodesMap[destVal], weight);
     }
+    input.close();
 
-    input.close(); // Chiudiamo il file di input perché abbiamo finito di leggere
-
-    ofstream output("output.txt"); // Apriamo il file di output per scrivere i risultati
+    // Apertura del file di output per scrivere i risultati dell'MST.
+    ofstream output("output.txt");
     if (!output.is_open()) {
-        cout << "Errore creazione output.txt" << endl;
+        cerr << "Errore nella creazione del file di output." << endl;
         return 1;
     }
 
     output << "Prim" << endl;
 
-    // Chiamiamo la funzione Prim.
-    // Notiamo due cose:
-    // 1. Passiamo 'output' come riferimento (ofstream &output) perché la funzione scriverà direttamente nel file i singoli archi dell'MST (es. "0 - 1 peso 5").
-    // 2. La funzione restituisce un intero, che rappresenta la somma dei pesi di tutti gli archi scelti per l'albero.
+    // Esecuzione dell'algoritmo di Prim e recupero del costo totale.
     int costoTotale = g.Prim(output);
-
-    // Stampiamo il valore finale restituito dalla funzione.
-    // Questo valore è il "peso del Minimum Spanning Tree".
     output << "Costo totale dell'MST: " << costoTotale << endl;
-    output << endl;
 
-    output.close(); // Chiudiamo il file
-    cout << "Operazione completata con successo!" << endl;
+    output.close();
+    cout << "File di output creato con successo!" << endl;
 
     return 0;
 }

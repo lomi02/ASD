@@ -1,218 +1,161 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
 #include <unordered_map>
-#include <functional>
 
 using namespace std;
 
-// Definiamo dei numeri interi per rappresentare lo stato di esplorazione di un nodo
-constexpr int WHITE = 0;       // Il nodo è "nuovo", non è ancora stato toccato
-constexpr int GRAY = 1;        // Il nodo è stato scoperto ma i suoi vicini sono ancora da controllare
-constexpr int BLACK = 2;       // Il nodo e tutti i suoi vicini sono stati esplorati completamente
-constexpr int INFINITY = 9999; // Usato per dire "non so ancora quanto sia lontano questo nodo"
+// Definizione di una costante per rappresentare l'infinito.
+// Viene usata per inizializzare le distanze dei nodi non ancora raggiunti.
+constexpr int INFINITY = 9999;
 
-// Template <typename T> permette alla classe di gestire sia int, che float, che altri tipi
+// Classe template che rappresenta un singolo Nodo (o Vertice) del grafo.
 template<typename T>
 class Node {
 public:
-    T val;                // Il nome o ID del nodo (es. 1, 2, 3...)
-    T key;                // Variabile di supporto (spesso usata in algoritmi come Prim)
-    int rank{};           // Usato per l'unione di set (algoritmo di Kruskal)
-    int color = WHITE;    // All'inizio, ogni nodo creato è WHITE (non visitato)
-    T dist = INFINITY;    // All'inizio, la distanza dalla sorgente è sconosciuta (infinito)
-    T discovery_time = 0; // Quando il nodo viene trovato (usato in DFS)
-    T finish_time = 0;    // Quando il nodo ha finito di essere esplorato (usato in DFS)
+    T val;             // Il valore o identificativo contenuto nel nodo.
+    T dist = INFINITY; // La distanza minima stimata dalla sorgente (inizializzata a infinito).
 
-    Node *parent;         // Puntatore al nodo che ci ha permesso di scoprire questo nodo
-
-    // Costruttore: inizializza il valore e imposta il genitore a nullo
-    explicit Node(T val) : val(val), parent(nullptr) {}
+    // Costruttore: inizializza il valore del nodo.
+    explicit Node(T val) : val(val) {}
 };
 
+// Classe template che rappresenta un Arco che collega due nodi.
 template<typename T>
 class Edge {
 public:
-    T weight;             // Il "costo" o peso per attraversare questo arco
-    Node<T> *source;      // Da dove parte l'arco (puntatore a oggetto Node)
-    Node<T> *destination; // Dove arriva l'arco (puntatore a oggetto Node)
+    T weight;             // Il peso (costo) dell'arco.
+    Node<T> *source;      // Puntatore al nodo di partenza.
+    Node<T> *destination; // Puntatore al nodo di arrivo.
 
-    // Costruttore dell'arco
+    // Costruttore: inizializza peso, sorgente e destinazione dell'arco.
     Edge(T weight, Node<T> *source, Node<T> *destination) : weight(weight), source(source), destination(destination) {}
 };
 
+// Classe template che gestisce la struttura del Grafo e l'algoritmo di Bellman-Ford.
 template<typename T>
 class Graph {
 public:
-    T time = 0;              // Contatore globale per i tempi di scoperta/fine
-    vector<Node<T> *> nodes; // Contenitore che tiene traccia di tutti i nodi nel grafo
-    vector<Edge<T> *> edges; // Contenitore che tiene traccia di tutti gli archi nel grafo
+    vector<Node<T> *> nodes; // Lista di tutti i nodi presenti nel grafo.
+    vector<Edge<T> *> edges; // Lista di tutti gli archi presenti nel grafo.
 
-    // Mappa dove la chiave è il valore del nodo e il valore è una lista di coppie (vicino, peso)
-    map<T, vector<pair<T, T> > > adjacencyList;
-
-    // Aggiunge un nodo alla lista globale dei nodi
+    // Aggiunge un nodo alla lista dei nodi del grafo.
     void addNode(Node<T> *node) { nodes.push_back(node); }
 
+    // Crea un nuovo arco pesato tra due nodi e lo aggiunge alla lista degli archi.
     void addEdge(Node<T> *source, Node<T> *destination, T weight) {
-
-        // Crea dinamicamente un nuovo oggetto Edge nella memoria (heap)
         auto *edge = new Edge<T>(weight, source, destination);
-
-        // Lo salva nel vettore globale degli archi
         edges.push_back(edge);
-
-        // Aggiunge alla lista di adiacenza del nodo sorgente il nodo destinazione e il suo peso
-        adjacencyList[source->val].push_back(make_pair(destination->val, weight));
-
-        // Poiché il grafo è non orientato, fa lo stesso al contrario
-        adjacencyList[destination->val].push_back(make_pair(source->val, weight));
     }
 
     /**
-     * INITIALIZE SINGLE SOURCE
-     * Prepara il grafo per il calcolo.
+     * Inizializzazione:
+     * Imposta la distanza di tutti i nodi a INFINITY e la distanza del nodo sorgente a 0.
      */
     void InitializeSingleSource(Node<T> *source) {
         for (auto node: nodes)
-            node->dist = INFINITY; // Tutti i nodi sono inizialmente irraggiungibili
-
-        source->dist = 0; // La distanza dalla sorgente a se stessa è zero
+            node->dist = INFINITY;
+        source->dist = 0;
     }
 
     /**
-     * RELAX (Rilassamento)
-     * È l'operazione fondamentale: prova a migliorare la distanza nota di un nodo.
+     * Relax (Rilassamento):
+     * Tenta di migliorare la distanza minima verso un nodo.
+     * Se passare per 'source' costa meno della distanza attuale di 'destination', aggiorna 'destination'.
      */
     void Relax(Edge<T> *edge) {
-
-        // Calcoliamo: "Distanza per arrivare alla sorgente dell'arco" + "Peso dell'arco"
         T newDist = edge->source->dist + edge->weight;
-
-        // Se questa nuova distanza è MINORE di quella che già conoscevamo per la destinazione
-        if (newDist < edge->destination->dist) {
-
-            // Allora abbiamo trovato una strada più breve! Aggiorniamo il nodo.
+        if (newDist < edge->destination->dist)
             edge->destination->dist = newDist;
-
-            // (Opzionale nel tuo codice) edge->destination->parent = edge->source;
-        }
     }
 
     /**
-    * BELLMAN-FORD
-    * Calcola i cammini minimi e rileva cicli di peso negativo.
-    */
+     * Bellman-Ford:
+     * Restituisce una stringa che indica se è stato trovato un ciclo negativo.
+     */
     string Bellman_Ford(Node<T> *source) {
 
-        // 1. Inizializzazione (come in Dijkstra)
+        // Passo 1: Inizializzazione dei nodi.
         InitializeSingleSource(source);
 
-        // 2. CICLO DI RILASSAMENTO PRINCIPALE
-        // Esegue il rilassamento di TUTTI gli archi per (V - 1) volte, dove V è il numero di nodi.
-        // Matematicamente, il cammino minimo più lungo possibile senza cicli può avere al massimo (V - 1) archi.
         int i = 0;
-        while (i < nodes.size() - 1) { // Nota: basterebbe nodes.size() - 1
-            for (Edge<T> *edge: edges) {
+        // Il ciclo principale deve essere eseguito fino a |V| volte.
+        // In un grafo senza cicli negativi, la distanza minima si trova in massimo |V|-1 iterazioni.
+        while (i < nodes.size()) {
 
-                // Prova a migliorare la distanza per ogni singolo arco esistente
+            // Per ogni iterazione, prova a rilassare tutti gli archi del grafo.
+            for (Edge<T> *edge: edges)
                 Relax(edge);
-            }
+
+            // Controllo della presenza di cicli negativi:
+            // Se dopo il rilassamento è ancora possibile migliorare una distanza, significa che esiste un ciclo di peso totale negativo.
+            for (Edge<T> *edge: edges)
+                if (edge->destination->dist > edge->source->dist + edge->weight)
+                    return "Trovato ciclo negativo \n";
+
             i++;
         }
-
-        // 3. CONTROLLO CICLI NEGATIVI
-        // Dopo aver rilassato (V-1) volte, le distanze dovrebbero essere definitive.
-        // Se provando a rilassare un'altra volta (la V-esima) la distanza DIMINUISCE ancora, significa che c'è un ciclo di peso complessivo negativo.
-        for (Edge<T> *edge: edges) {
-
-            // Se la distanza attuale del nodo destinazione è ancora maggiore della somma (distanza sorgente + peso arco)...
-            if (edge->destination->dist > edge->source->dist + edge->weight) {
-
-                // ...allora siamo in un pozzo senza fondo (ciclo negativo)
-                return "Trovato ciclo negativo \n";
-            }
-        }
-
         return "Non trovato ciclo negativo \n";
     }
 };
 
 int main() {
-    bool pesiNegativi = false;   // Flag per ricordarci se abbiamo incontrato pesi < 0
-    ifstream input("input.txt"); // Apriamo il file in lettura
 
-    // Controllo sicurezza: il file esiste?
+    // Apertura del file di input contenente i dati del grafo.
+    ifstream input("input.txt");
     if (!input.is_open()) {
-        cerr << "Errore: File input.txt non trovato!" << endl;
+        cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
     }
 
     int numNodes, numEdges;
-    input >> numNodes >> numEdges; // Legge i primi due numeri dal file
+    // Legge il numero totale di nodi e archi dalla prima riga del file.
+    input >> numNodes >> numEdges;
 
-    // Mappa per associare un numero intero (ID) al puntatore dell'oggetto Node reale
+    // Mappa per associare un valore intero al puntatore dell'oggetto Node corrispondente.
+    // Evita di creare nodi duplicati durante la lettura degli archi.
     unordered_map<int, Node<int> *> nodesMap;
+
     Graph<int> g;
 
-    // Ciclo per leggere ogni arco definito nel file
+    // Ciclo per leggere ogni arco dal file.
     for (int i = 0; i < numEdges; i++) {
         int sourceVal, destVal, weight;
-        input >> sourceVal >> destVal >> weight; // Legge: Da dove, A dove, Quanto pesa
+        input >> sourceVal >> destVal >> weight;
 
-        // GESTIONE SORGENTE:
-        Node<int> *sourceNode = nullptr;
-        auto itSource = nodesMap.find(sourceVal);
-        if (itSource == nodesMap.end()) {
-
-            // Se non esiste nella mappa, è un nodo nuovo: lo creiamo
-            sourceNode = new Node<int>(sourceVal);
-            nodesMap[sourceVal] = sourceNode; // Lo salviamo nella mappa
-            g.addNode(sourceNode);            // Lo aggiungiamo al grafo
-        } else {
-
-            // Se esisteva già, prendiamo il puntatore esistente
-            sourceNode = itSource->second;
+        // Se i nodi che compongono l'arco non esistono ancora, vengono creati e aggiunti al grafo.
+        for (int val: {sourceVal, destVal}) {
+            if (nodesMap.find(val) == nodesMap.end()) {
+                auto newNode = new Node<int>(val);
+                nodesMap[val] = newNode;
+                g.addNode(newNode);
+            }
         }
 
-        // GESTIONE DESTINAZIONE (Logica identica alla sorgente):
-        Node<int> *destNode = nullptr;
-        auto itDest = nodesMap.find(destVal);
-        if (itDest == nodesMap.end()) {
-            destNode = new Node<int>(destVal);
-            nodesMap[destVal] = destNode;
-            g.addNode(destNode);
-        } else {
-            destNode = itDest->second;
-        }
-
-        // Ora che abbiamo i puntatori ai due nodi, creiamo l'arco tra loro
-        g.addEdge(sourceNode, destNode, weight);
-
-        if (weight < 0) pesiNegativi = true; // Annotiamo se il peso è negativo
+        // Aggiunge l'arco pesato al grafo usando i puntatori recuperati dalla mappa.
+        g.addEdge(nodesMap[sourceVal], nodesMap[destVal], weight);
     }
 
-    input.close(); // Chiudiamo il file di input perché abbiamo finito di leggere
+    input.close();
 
-    ofstream output("output.txt"); // Apriamo il file di output per scrivere i risultati
+    // Apertura del file di output per scrivere i risultati.
+    ofstream output("output.txt");
     if (!output.is_open()) {
-        cout << "Errore creazione output.txt" << endl;
+        cout << "Errore nella creazione del file di output." << endl;
         return 1;
     }
 
+    // Esecuzione dell'algoritmo partendo dal nodo con valore 1.
     string result;
-    // Avviamo Bellman-Ford partendo dal nodo che ha valore "1"
-    // Assumiamo che nodesMap[1] esista sempre nel tuo file di input
     result = g.Bellman_Ford(nodesMap[1]);
 
-    // Scriviamo il risultato nel file (se ha trovato cicli negativi o no)
+    // Scrittura del risultato sul file di output.
     output << "Bellman_Ford" << endl;
     output << result;
     output << endl;
 
-    output.close(); // Chiudiamo il file
-    cout << "Operazione completata con successo!" << endl;
+    output.close();
+    cout << "File di output creato con successo!" << endl;
 
     return 0;
 }

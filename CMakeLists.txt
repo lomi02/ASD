@@ -3,4 +3,4 @@ project(EsameC++)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(EsameC++ Grafi/Prim.cpp)
+add_executable(EsameC++ Blackboard.cpp)

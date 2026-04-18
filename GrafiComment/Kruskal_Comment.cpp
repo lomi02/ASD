@@ -1,229 +1,168 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <map>
 #include <unordered_map>
-#include <functional>
 #include <algorithm>
 
 using namespace std;
 
-// Definiamo dei numeri interi per rappresentare lo stato di esplorazione di un nodo
-constexpr int WHITE = 0;       // Il nodo è "nuovo", non è ancora stato toccato
-constexpr int GRAY = 1;        // Il nodo è stato scoperto ma i suoi vicini sono ancora da controllare
-constexpr int BLACK = 2;       // Il nodo e tutti i suoi vicini sono stati esplorati completamente
-constexpr int INFINITY = 9999; // Usato per dire "non so ancora quanto sia lontano questo nodo"
-
-// Template <typename T> permette alla classe di gestire sia int, che float, che altri tipi
+// Classe template che rappresenta un singolo Nodo (o Vertice) del grafo.
 template<typename T>
 class Node {
 public:
-    T val;                // Il nome o ID del nodo (es. 1, 2, 3...)
-    T key;                // Variabile di supporto (spesso usata in algoritmi come Prim)
-    int rank{};           // Usato per l'unione di set (algoritmo di Kruskal)
-    int color = WHITE;    // All'inizio, ogni nodo creato è WHITE (non visitato)
-    T dist = INFINITY;    // All'inizio, la distanza dalla sorgente è sconosciuta (infinito)
-    T discovery_time = 0; // Quando il nodo viene trovato (usato in DFS)
-    T finish_time = 0;    // Quando il nodo ha finito di essere esplorato (usato in DFS)
+    T val;             // Il valore o identificativo contenuto nel nodo.
+    int rank{};        // Grado del nodo, utilizzato per ottimizzare l'unione dei set (Union by Rank).
+    Node *parent;      // Puntatore al nodo genitore per la struttura a foreste del Disjoint Set.
 
-    Node *parent;         // Puntatore al nodo che ci ha permesso di scoprire questo nodo
-
-    // Costruttore: inizializza il valore e imposta il genitore a nullo
+    // Costruttore: inizializza il valore e imposta inizialmente il padre a null.
     explicit Node(T val) : val(val), parent(nullptr) {}
 };
 
+// Classe template che rappresenta un Arco che collega due nodi.
 template<typename T>
 class Edge {
 public:
-    T weight;             // Il "costo" o peso per attraversare questo arco
-    Node<T> *source;      // Da dove parte l'arco (puntatore a oggetto Node)
-    Node<T> *destination; // Dove arriva l'arco (puntatore a oggetto Node)
+    T weight;             // Il peso (costo) dell'arco.
+    Node<T> *source;      // Puntatore al nodo di partenza.
+    Node<T> *destination; // Puntatore al nodo di arrivo.
 
-    // Costruttore dell'arco
+    // Costruttore: inizializza peso, sorgente e destinazione dell'arco.
     Edge(T weight, Node<T> *source, Node<T> *destination) : weight(weight), source(source), destination(destination) {}
 };
 
+// Classe template che gestisce la struttura del Grafo e l'algoritmo di Kruskal.
 template<typename T>
 class Graph {
 public:
-    T time = 0;              // Contatore globale per i tempi di scoperta/fine
-    vector<Node<T> *> nodes; // Contenitore che tiene traccia di tutti i nodi nel grafo
-    vector<Edge<T> *> edges; // Contenitore che tiene traccia di tutti gli archi nel grafo
+    vector<Node<T> *> nodes; // Lista di tutti i nodi presenti nel grafo.
+    vector<Edge<T> *> edges; // Lista di tutti gli archi presenti nel grafo.
 
-    // Mappa dove la chiave è il valore del nodo e il valore è una lista di coppie (vicino, peso)
-    map<T, vector<pair<T, T> > > adjacencyList;
-
-    // Aggiunge un nodo alla lista globale dei nodi
+    // Aggiunge un nodo alla lista dei nodi del grafo.
     void addNode(Node<T> *node) { nodes.push_back(node); }
 
+    // Crea un nuovo arco pesato tra due nodi e lo aggiunge alla lista globale degli archi.
     void addEdge(Node<T> *source, Node<T> *destination, T weight) {
-
-        // Crea dinamicamente un nuovo oggetto Edge nella memoria (heap)
         auto *edge = new Edge<T>(weight, source, destination);
-
-        // Lo salva nel vettore globale degli archi
         edges.push_back(edge);
-
-        // Aggiunge alla lista di adiacenza del nodo sorgente il nodo destinazione e il suo peso
-        adjacencyList[source->val].push_back(make_pair(destination->val, weight));
-
-        // Poiché il grafo è non orientato, fa lo stesso al contrario
-        adjacencyList[destination->val].push_back(make_pair(source->val, weight));
-    }
-
-    // Crea un nuovo insieme dove il nodo 'x' è il capo di se stesso
-    void MakeSet(Node<T> *x) {
-        x->parent = x;    // All'inizio, il padre di x è x
-        x->rank = 0;      // Il rank (altezza dell'albero) è zero
-    }
-
-    // Trova il "rappresentante" (il capo) dell'insieme a cui appartiene x
-    Node<T> *FindSet(Node<T> *x) {
-        if (x != x->parent)
-            // Path Compression: mentre risale l'albero per cercare il capo, collega x direttamente al capo per velocizzare le ricerche future.
-                x->parent = FindSet(x->parent);
-        return x->parent;
-    }
-
-    // Unisce gli insiemi di x e y
-    void UnionSet(Node<T> *x, Node<T> *y) {
-        LinkSet(FindSet(x), FindSet(y)); // Trova i capi e li collega
-    }
-
-    // Collega fisicamente due alberi (insiemi)
-    void LinkSet(Node<T> *x, Node<T> *y) {
-        // Union by Rank: attacca l'albero più basso a quello più alto per evitare che l'albero diventi troppo lungo e lento da percorrere.
-        if (x->rank > y->rank)
-            y->parent = x;
-        else
-            x->parent = y;
-
-        // Se hanno la stessa altezza, uno diventa padre e il suo rank aumenta
-        if (x->rank == y->rank)
-            ++y->rank;
     }
 
     /**
-     * KRUSKAL
-     * Trova l'MST selezionando gli archi in ordine di peso.
+     * OPERAZIONI DISJOINT SET (DSU):
+     * Indispensabili per Kruskal per rilevare cicli in modo efficiente.
+     */
+
+    // Inizializza un nuovo set contenente il solo nodo x.
+    void MakeSet(Node<T> *x) {
+        x->parent = x;
+        x->rank = 0;
+    }
+
+    // Trova il rappresentante del set di x applicando la "Path Compression".
+    Node<T> *FindSet(Node<T> *x) {
+        if (x != x->parent)
+            x->parent = FindSet(x->parent);
+        return x->parent;
+    }
+
+    // Unisce i set dei due nodi x e y tramite i rispettivi rappresentanti.
+    void UnionSet(Node<T> *x, Node<T> *y) {
+        LinkSet(FindSet(x), FindSet(y));
+    }
+
+    // Collega due alberi (set) mettendo quello con rank minore sotto la radice di quello con rank maggiore.
+    void LinkSet(Node<T> *x, Node<T> *y) {
+        if (x->rank > y->rank)
+            y->parent = x;
+        else {
+            x->parent = y;
+            if (x->rank == y->rank)
+                ++y->rank;
+        }
+    }
+
+    /**
+     * Kruskal:
+     * Trova il Minimum Spanning Tree (MST) selezionando gli archi con peso minore che non creano cicli.
      */
     vector<Edge<T> *> Kruskal() {
+        vector<Edge<T> *> A; // Insieme degli archi che faranno parte del MST.
 
-        // 'A' sarà il contenitore degli archi che faranno parte del nostro MST finale.
-        vector<Edge<T> *> A;
-
-        // 1. INIZIALIZZAZIONE (DSU)
-        // Creiamo un insieme separato per ogni nodo.
-        // All'inizio ogni nodo è una "componente connessa" a sé stante.
+        // Passo 1: Crea un set separato per ogni nodo del grafo.
         for (auto node: nodes)
             MakeSet(node);
 
-        // 2. ORDINAMENTO DEGLI ARCHI (Sort)
-        // Questa è la fase cruciale: ordiniamo TUTTI gli archi del grafo dal più leggero al più pesante.
-        // Utilizziamo una funzione lambda per confrontare i pesi.
+        // Passo 2: Ordina tutti gli archi del grafo in ordine crescente di peso (approccio greedy).
         sort(edges.begin(), edges.end(), [](Edge<T> *a, Edge<T> *b) {
             return a->weight < b->weight;
         });
 
-        // 3. CICLO DI SELEZIONE GREEDY
-        // Scorriamo gli archi ordinati uno per uno.
+        // Passo 3: Esplora gli archi in ordine di peso.
         for (auto edge: edges) {
-            // Controlliamo se la sorgente e la destinazione dell'arco appartengono già allo stesso insieme (cioè se sono già collegati).
+
+            // Se i rappresentanti di sorgente e destinazione sono diversi, l'arco non chiude un ciclo.
             if (FindSet(edge->source) != FindSet(edge->destination)) {
 
-                // Se NON sono collegati, aggiungere questo arco non creerà un ciclo.
-                // Quindi lo aggiungiamo al nostro MST (A).
-                A.push_back(edge);
-
-                // Fondiamo i due insiemi: ora source e destination fanno parte della stessa struttura.
-                UnionSet(edge->source, edge->destination);
+                A.push_back(edge);                         // Aggiunge l'arco alla soluzione.
+                UnionSet(edge->source, edge->destination); // Unisce i due set.
             }
-            // Se FindSet fosse stato uguale, avremmo scartato l'arco perché avrebbe creato un ciclo (chiudendo un percorso già esistente).
         }
-
-        return A; // Restituiamo la lista degli archi che formano l'MST.
+        return A;
     }
 };
 
 int main() {
-    bool pesiNegativi = false;   // Flag per ricordarci se abbiamo incontrato pesi < 0
-    ifstream input("input.txt"); // Apriamo il file in lettura
 
-    // Controllo sicurezza: il file esiste?
+    // Apertura del file di input contenente la struttura del grafo.
+    ifstream input("input.txt");
     if (!input.is_open()) {
-        cerr << "Errore: File input.txt non trovato!" << endl;
+        cerr << "Errore durante la lettura del file di input" << endl;
         return 1;
     }
 
     int numNodes, numEdges;
-    input >> numNodes >> numEdges; // Legge i primi due numeri dal file
+    // Legge il numero di nodi e di archi.
+    input >> numNodes >> numEdges;
 
-    // Mappa per associare un numero intero (ID) al puntatore dell'oggetto Node reale
+    // Mappa per associare gli interi letti agli oggetti Node, evitando duplicati.
     unordered_map<int, Node<int> *> nodesMap;
     Graph<int> g;
 
-    // Ciclo per leggere ogni arco definito nel file
+    // Lettura degli archi dal file e costruzione del grafo.
     for (int i = 0; i < numEdges; i++) {
         int sourceVal, destVal, weight;
-        input >> sourceVal >> destVal >> weight; // Legge: Da dove, A dove, Quanto pesa
+        input >> sourceVal >> destVal >> weight;
 
-        // GESTIONE SORGENTE:
-        Node<int> *sourceNode = nullptr;
-        auto itSource = nodesMap.find(sourceVal);
-        if (itSource == nodesMap.end()) {
-
-            // Se non esiste nella mappa, è un nodo nuovo: lo creiamo
-            sourceNode = new Node<int>(sourceVal);
-            nodesMap[sourceVal] = sourceNode; // Lo salviamo nella mappa
-            g.addNode(sourceNode);            // Lo aggiungiamo al grafo
-        } else {
-
-            // Se esisteva già, prendiamo il puntatore esistente
-            sourceNode = itSource->second;
+        for (int val: {sourceVal, destVal}) {
+            if (nodesMap.find(val) == nodesMap.end()) {
+                auto newNode = new Node<int>(val);
+                nodesMap[val] = newNode;
+                g.addNode(newNode);
+            }
         }
 
-        // GESTIONE DESTINAZIONE (Logica identica alla sorgente):
-        Node<int> *destNode = nullptr;
-        auto itDest = nodesMap.find(destVal);
-        if (itDest == nodesMap.end()) {
-            destNode = new Node<int>(destVal);
-            nodesMap[destVal] = destNode;
-            g.addNode(destNode);
-        } else {
-            destNode = itDest->second;
-        }
-
-        // Ora che abbiamo i puntatori ai due nodi, creiamo l'arco tra loro
-        g.addEdge(sourceNode, destNode, weight);
-
-        if (weight < 0) pesiNegativi = true; // Annotiamo se il peso è negativo
+        // Aggiunge l'arco al grafo (trattato come non orientato).
+        g.addEdge(nodesMap[sourceVal], nodesMap[destVal], weight);
     }
+    input.close();
 
-    input.close(); // Chiudiamo il file di input perché abbiamo finito di leggere
-
-    ofstream output("output.txt"); // Apriamo il file di output per scrivere i risultati
+    // Apertura del file di output per i risultati del MST.
+    ofstream output("output.txt");
     if (!output.is_open()) {
-        cout << "Errore creazione output.txt" << endl;
+        cout << "Errore nella creazione del file di output." << endl;
         return 1;
     }
 
     output << "Kruskal" << endl;
 
-    // Chiamiamo la funzione Kruskal che restituisce un vector di puntatori ad archi.
-    // Questi archi rappresentano i collegamenti scelti per formare l'MST.
+    // Esecuzione dell'algoritmo di Kruskal.
     vector<Edge<int> *> mst_K = g.Kruskal();
 
-    // Ciclo "range-based": scorre ogni puntatore a Edge contenuto nel vettore mst_K
-    for (auto edge: mst_K) {
-        // Accediamo all'oggetto Edge tramite il puntatore:
-        // edge->source->val: prende l'ID del nodo di partenza dell'arco
-        // edge->destination->val: prende l'ID del nodo di arrivo
-        // edge->weight: prende il costo di quel collegamento specifico
+    // Stampa degli archi selezionati per il Minimum Spanning Tree.
+    for (auto edge: mst_K)
         output << edge->source->val << " - " << edge->destination->val << " " << edge->weight << endl;
-    }
 
-    output.close(); // Chiudiamo il file
-    cout << "Operazione completata con successo!" << endl;
+    output.close();
+    cout << "File di output creato con successo!" << endl;
 
     return 0;
 }
