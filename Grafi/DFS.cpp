@@ -88,13 +88,12 @@ int main() {
         int sourceVal, destVal, weight;
         input >> sourceVal >> destVal >> weight;
 
-        for (int val: {sourceVal, destVal}) {
+        for (int val: {sourceVal, destVal})
             if (nodesMap.find(val) == nodesMap.end()) {
                 auto newNode = new Node<int>(val);
                 nodesMap[val] = newNode;
                 g.addNode(newNode);
             }
-        }
         g.addEdge(nodesMap[sourceVal], nodesMap[destVal], weight);
     }
     input.close();

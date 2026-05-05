@@ -52,12 +52,11 @@ public:
             q.pop();
             for (auto v: adjacencyList[u->val]) {
                 Node<T> *node = nullptr;
-                for (Node<T> *n: nodes) {
+                for (Node<T> *n: nodes)
                     if (n->val == v.first) {
                         node = n;
                         break;
                     }
-                }
 
                 if (node == nullptr)
                     continue;
@@ -77,12 +76,11 @@ public:
         u->color = GRAY;
         for (auto v: adjacencyList[u->val]) {
             Node<T> *node = nullptr;
-            for (Node<T> *n: nodes) {
+            for (Node<T> *n: nodes)
                 if (n->val == v.first) {
                     node = n;
                     break;
                 }
-            }
 
             if (node == nullptr)
                 continue;
@@ -114,13 +112,12 @@ int main() {
         int sourceVal, destVal, weight;
         input >> sourceVal >> destVal >> weight;
 
-        for (int val: {sourceVal, destVal}) {
+        for (int val: {sourceVal, destVal})
             if (nodesMap.find(val) == nodesMap.end()) {
                 auto newNode = new Node<int>(val);
                 nodesMap[val] = newNode;
                 g.addNode(newNode);
             }
-        }
         g.addEdge(nodesMap[sourceVal], nodesMap[destVal], weight);
     }
     input.close();
