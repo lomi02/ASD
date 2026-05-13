@@ -25,22 +25,10 @@ public:
         return (key + i) % m;
     }
 
-    int hash_quad(T key, int i) {
-        return (key + i + i * i) % m;
-    }
-
-    int hash_doppio(int key, int i) {
-        int h1 = key % m;
-        int h2 = 1 + key % (m - 1);
-        return (h1 + i * h2) % m;
-    }
-
     void insert(Item<T> *item) {
         int i = 0;
         while (i != m) {
             int j = hash(item->key, i);
-            if (table.size() <= j)
-                table.resize(j + 1, nullptr);
             if (table[j] == nullptr) {
                 table[j] = item;
                 return;

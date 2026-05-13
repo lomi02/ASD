@@ -20,8 +20,8 @@ public:
 template<typename T>
 class HashTable {
 public:
-    int m; // Dimensione della tabella (numero di slot).
-    vector<Item<T> *> table; // Vettore di puntatori a Item che costituisce la tabella.
+    int m;                      // Dimensione della tabella (numero di slot).
+    vector<Item<T> *> table;    // Vettore di puntatori a Item che costituisce la tabella.
 
     // Costruttore: inizializza la dimensione m e alloca lo spazio necessario impostando a null.
     HashTable(int m) : m(m), table(m, nullptr) {}
@@ -29,18 +29,6 @@ public:
     // Funzione di Hash: Ispezione Lineare.
     int hash(T key, int i) {
         return (key + i) % m;
-    }
-
-    // Funzione di Hash: Ispezione Quadratica.
-    int hash_quad(T key, int i) {
-        return (key + i + i * i) % m;
-    }
-
-    // Funzione di Hash: Doppio Hashing.
-    int hash_doppio(int key, int i) {
-        int h1 = key % m;
-        int h2 = 1 + key % (m - 1);
-        return (h1 + i * h2) % m;
     }
 
     /**
@@ -53,10 +41,6 @@ public:
         // Ciclo di scansione fino al raggiungimento della dimensione massima m.
         while (i != m) {
             int j = hash(item->key, i);
-
-            // Controllo di sicurezza sulla dimensione del vettore (ridondante se m è corretto).
-            if (table.size() <= j)
-                table.resize(j + 1, nullptr);
 
             // Passo 1: Se lo slot è vuoto, inserisce l'elemento e termina.
             if (table[j] == nullptr) {
@@ -110,9 +94,8 @@ public:
 
             // Passo 2: Se la chiave corrisponde, si attiva il flag di cancellazione.
             // L'elemento resta in memoria per non interrompere le catene di ricerca.
-            if (table[j]->key == key) {
+            if (table[j]->key == key)
                 table[j]->deleted = true;
-            }
             i++;
             j = hash(key, i);
         }
